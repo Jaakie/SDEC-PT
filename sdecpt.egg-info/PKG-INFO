@@ -1,0 +1,6 @@
+Metadata-Version: 2.1
+Name: sdecpt
+Version: 1.0
+Summary: PyTorch implementation of Semi-supervised DEC.
+Author: Jacques van Wyk
+Author-email: jvanwyk40@gmail.com
