@@ -59,6 +59,6 @@ def semi_sup_loss(Z:torch.Tensor, Y:torch.Tensor, idxes: list, lambd=1e-5)->torc
         n = Z.shape[0]
         a = get_pairwise_constraints(Y,idxes)
         diff = Z[np.newaxis, :, :] - Z[:, np.newaxis, :]
-        res = torch.sum(torch.mul(a.cpu(), torch.sum(torch.square(diff.cpu()),axis=-1)))
-        return torch.mul(res,lambd / n)
+        res = torch.sum(a.cpu() * torch.sum(torch.square(diff.cpu()),axis=-1))
+        return 0
 

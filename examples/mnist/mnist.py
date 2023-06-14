@@ -95,9 +95,9 @@ def main(cuda, batch_size, pretrain_epochs, finetune_epochs, testing_mode):
         train=False, cuda=cuda, testing_mode=testing_mode
     )  # evaluation dataset
     
-    #Create random indexes for semi-supervised learning. We make constraints for 20% of the data 
+    #Create random indexes for semi-supervised learning. We make constraints for 30% of the data 
     randidxs = []
-    ratio = 0.2
+    ratio = 0.3
     remainder = len(ds_train)%batch_size
     for i in range(int(len(ds_train)/batch_size)):
         randidx = []
@@ -113,7 +113,7 @@ def main(cuda, batch_size, pretrain_epochs, finetune_epochs, testing_mode):
             index2 = random.randrange(0, remainder - 1)
             randidx.append((index1,index2))
         randidxs.append(np.array(randidx))
-
+        
     autoencoder = StackedDenoisingAutoEncoder(
         [28 * 28, 500, 500, 2000, 10], final_activation=None
     )
@@ -121,7 +121,7 @@ def main(cuda, batch_size, pretrain_epochs, finetune_epochs, testing_mode):
         autoencoder.cuda()
 
     #Debug - to load autoencoder or train
-    loadAE = True
+    loadAE = False
 
     if loadAE: 
         autoencoder = (torch.load('AE_model.pth'))
