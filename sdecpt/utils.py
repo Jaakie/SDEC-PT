@@ -3,7 +3,8 @@ import torch
 from typing import Optional
 from scipy.optimize import linear_sum_assignment
 import random
-
+import sys
+np.set_printoptions(threshold=np.inf)
 
 def cluster_accuracy(y_true, y_predicted, cluster_number: Optional[int] = None):
     """
@@ -47,18 +48,22 @@ def get_pairwise_constraints(Y: torch.Tensor, idxes: list)->torch.Tensor:
     """
     n = Y.shape[0]
     a = torch.zeros((n, n))
+    
     for index1, index2 in idxes:
-        if (Y[index1] == Y[index2]):
+        if (torch.eq(Y[index1],Y[index2])):
             a[index1, index2] = 1
         else:
             a[index1, index2] = -1
+    
     a = torch.tril(a,-1) + torch.triu(a, 1)
+ 
     return a
 
-def semi_sup_loss(Z:torch.Tensor, Y:torch.Tensor, idxes: list, lambd=1e-5)->torch.Tensor:
+def semi_sup_loss(Z:torch.Tensor, a:torch.Tensor, lambd=1)->torch.Tensor:
         n = Z.shape[0]
-        a = get_pairwise_constraints(Y,idxes)
         diff = Z[np.newaxis, :, :] - Z[:, np.newaxis, :]
         res = torch.sum(a.cpu() * torch.sum(torch.square(diff.cpu()),axis=-1))
-        return 0
+        loss = torch.mul(res,lambd / n)
+        return loss
+        
 

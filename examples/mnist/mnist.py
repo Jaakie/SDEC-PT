@@ -2,7 +2,7 @@ import click
 import numpy as np
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
-from torch.optim import SGD
+from torch.optim import SGD, Adam
 from torch.optim.lr_scheduler import StepLR
 import torch
 from torch.utils.data import Dataset, Subset
@@ -62,13 +62,13 @@ class CachedMNIST(Dataset):
     "--pretrain-epochs",
     help="number of pretraining epochs (default 300).",
     type=int,
-    default=300,
+    default=100,
 )
 @click.option(
     "--finetune-epochs",
     help="number of finetune epochs (default 500).",
     type=int,
-    default=500,
+    default=300,
 )
 @click.option(
     "--testing-mode",
@@ -95,13 +95,13 @@ def main(cuda, batch_size, pretrain_epochs, finetune_epochs, testing_mode):
         train=False, cuda=cuda, testing_mode=testing_mode
     )  # evaluation dataset
     
-    #Create random indexes for semi-supervised learning. We make constraints for 30% of the data 
+    #Create random indexes for semi-supervised learning. We make constraints for 20% of the data points.
     randidxs = []
-    ratio = 0.3
+    ratio = 0.2
     remainder = len(ds_train)%batch_size
     for i in range(int(len(ds_train)/batch_size)):
         randidx = []
-        for j in range(int(batch_size * ratio)):
+        for j in range(int(batch_size**2 * ratio)):
             index1 = random.randrange(0, batch_size - 1)
             index2 = random.randrange(0, batch_size - 1)
             randidx.append((index1,index2))
@@ -113,7 +113,7 @@ def main(cuda, batch_size, pretrain_epochs, finetune_epochs, testing_mode):
             index2 = random.randrange(0, remainder - 1)
             randidx.append((index1,index2))
         randidxs.append(np.array(randidx))
-        
+    
     autoencoder = StackedDenoisingAutoEncoder(
         [28 * 28, 500, 500, 2000, 10], final_activation=None
     )
@@ -121,7 +121,7 @@ def main(cuda, batch_size, pretrain_epochs, finetune_epochs, testing_mode):
         autoencoder.cuda()
 
     #Debug - to load autoencoder or train
-    loadAE = False
+    loadAE = True
 
     if loadAE: 
         autoencoder = (torch.load('AE_model.pth'))
@@ -158,7 +158,7 @@ def main(cuda, batch_size, pretrain_epochs, finetune_epochs, testing_mode):
     model = DEC(cluster_number=10, hidden_dimension=10, encoder=autoencoder.encoder)
     if cuda:
         model.cuda()
-    dec_optimizer = SGD(model.parameters(), lr=0.01, momentum=0.9)
+    dec_optimizer = SGD(model.parameters(), lr=0.01, momentum = 0.9)
 
     #Debug - to load DEC model or train
     loadDEC = False
@@ -169,6 +169,7 @@ def main(cuda, batch_size, pretrain_epochs, finetune_epochs, testing_mode):
         train(
         dataset=ds_train,
         idxes=randidxs,
+        lamb=1e-4,
         model=model,
         epochs=100,
         batch_size=256,

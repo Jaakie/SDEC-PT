@@ -5,13 +5,14 @@ import torch.nn as nn
 from torch.utils.data.dataloader import DataLoader, default_collate
 from typing import Tuple, Callable, Optional, Union
 from tqdm import tqdm
-from sdecpt.utils import target_distribution, cluster_accuracy, semi_sup_loss
+from sdecpt.utils import target_distribution, cluster_accuracy, semi_sup_loss, get_pairwise_constraints
 import math
 
 def train(
     dataset: torch.utils.data.Dataset,
     model: torch.nn.Module,
     idxes: list,
+    lamb:float,
     epochs: int,
     batch_size: int,
     optimizer: torch.optim.Optimizer,
@@ -99,6 +100,19 @@ def train(
         model.state_dict()["assignment.cluster_centers"].copy_(cluster_centers)
     loss_function = nn.KLDivLoss(reduction='batchmean')
     delta_label = None
+    
+    print('Creating constraint matrix...')
+    constraint_list = []
+    for index, batch in enumerate(data_iterator):
+        if (isinstance(batch, tuple) or isinstance(batch, list)) and len(
+                batch
+        ) == 2:
+            batch, labels = batch  
+        if cuda:
+            batch = batch.cuda(non_blocking=True)
+    
+        constraint_list.append(get_pairwise_constraints(labels,idxes[index]))
+            
     for epoch in range(epochs):
         features = []
         data_iterator = tqdm(
@@ -124,7 +138,9 @@ def train(
             output = model(batch)
             target = target_distribution(output).detach()
             
-            loss = loss_function(output.log(), target) + semi_sup_loss(output, labels, idxes[index]) 
+
+            loss = loss_function(output.log(), target) + semi_sup_loss(output,constraint_list[index],lamb)
+           
             data_iterator.set_postfix(
                 epo=epoch,
                 acc="%.4f" % (accuracy or 0.0),
