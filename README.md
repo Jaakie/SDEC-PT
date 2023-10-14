@@ -1,6 +1,6 @@
 # sdecpt
 
-PyTorch implementation of a version of Semi-supervised Deep Embedded Clustering (DEC) algorithm, proposed by Ren et. al. in their paper "Semi-supervised deep embedded clustering ". The code is based on the PyTorch implementation of DEC by vlukiyanov (https://github.com/vlukiyanov/pt-dec). I only really made changes to the loss function, configuring it to use a constraint matrix.
+PyTorch implementation of a version of Semi-supervised Deep Embedded Clustering (SDEC) algorithm, proposed by Ren et. al. in their paper "Semi-supervised deep embedded clustering ". The code is based on the PyTorch implementation of DEC by vlukiyanov (https://github.com/vlukiyanov/pt-dec). I only really made changes to the loss function, configuring it to use a constraint matrix.
 
 ## Examples
 
